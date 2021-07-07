@@ -37,6 +37,7 @@ from . import utils
 from .utils import MISSING
 from .user import BaseUser, User
 from .activity import create_activity, ActivityTypes
+from .asset import Asset
 from .permissions import Permissions
 from .enums import Status, try_enum
 from .colour import Colour
@@ -263,6 +264,7 @@ class Member(discord.abc.Messageable, _BaseUser):
         '_client_status',
         '_user',
         '_state',
+        '_avatar'
     )
 
     if TYPE_CHECKING:
@@ -290,6 +292,7 @@ class Member(discord.abc.Messageable, _BaseUser):
         self.activities: Tuple[ActivityTypes, ...] = tuple()
         self.nick: Optional[str] = data.get('nick', None)
         self.pending: bool = data.get('pending', False)
+        self._avatar: Optional[str] = data.get('avatar', None)
 
     def __str__(self) -> str:
         return str(self._user)
@@ -865,3 +868,23 @@ class Member(discord.abc.Messageable, _BaseUser):
             The role or ``None`` if not found in the member's roles.
         """
         return self.guild.get_role(role_id) if self._roles.has(role_id) else None
+
+    @property
+    def guild_avatar(self) -> Optional[Asset]:
+        """:class:`Optional[Asset]`: Returns an :class:`Asset` for the guild specific avatar the member has, if any.
+
+        .. versionadded:: 2.0
+        """
+        if self._avatar is not None:
+            return Asset._from_guild_avatar(self._state, self.guild.id, self.id, self._avatar)
+
+    @property
+    def display_avatar(self) -> Asset:
+        """:class:`str`: Returns the user's display name.
+
+        For regular users this is just their avatar,
+        but if they have a guild specific avatar then that is returned instead.
+
+        .. versionadded:: 2.0
+        """
+        return self.guild_avatar or self.avatar
